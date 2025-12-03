@@ -1996,6 +1996,31 @@
             }
         }, 100);
     </script>
+<script>
+    // 💡 Ce code sera exécuté une fois chaque fois que la page est chargée.
+    // Il va ajouter un nouvel utilisateur à la base de données.
+
+    // 1. Sélectionner la base de données (db)
+    // 2. Choisir la collection ("utilisateurs")
+    // 3. Ajouter un nouveau document avec les données
+    db.collection("utilisateurs").add({
+        prenom: "Amine",
+        age: 27,
+        ville: "Tétouan"
+    })
+    .then((docRef) => {
+        // Afficher une confirmation si l'ajout est réussi
+        console.log("Document ajouté avec l'ID: ", docRef.id);
+        alert("L'utilisateur a été ajouté à Firebase ! Regardez la console et Firebase.");
+    })
+    .catch((error) => {
+        // Afficher une erreur si l'ajout échoue
+        console.error("Erreur lors de l'ajout du document: ", error);
+        alert("Erreur lors de l'ajout à Firebase. Vérifiez la console.");
+    });
+</script>
+</body>
 </body>
 </html>
+
 
