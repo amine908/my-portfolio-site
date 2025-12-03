@@ -1,6 +1,29 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
+    <script>
+  // Votre configuration Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyACj3joexbdFVWzZe_l6D4RRY-Pu5L6b1o",
+    authDomain: "myhoodie-28a7b.firebaseapp.com",
+    projectId: "myhoodie-28a7b",
+    storageBucket: "myhoodie-28a7b.appspot.com",
+    messagingSenderId: "259804789752",
+    appId: "1:259804789752:web:4e4d00993b6f9a8295340d",
+    measurementId: "G-SCNE6JFQQH"
+  };
+
+  // Initialisation de Firebase
+  const app = firebase.initializeApp(firebaseConfig);
+  
+  // Rendre la base de données (Firestore) accessible
+  const db = firebase.firestore();
+
+  // Facultatif: Vous pouvez ignorer la ligne "const analytics = getAnalytics(app);" pour le moment.
+
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Premium Hoodies For You - Boutique de Hoodies Premium</title>
@@ -1998,4 +2021,5 @@
     </script>
 </body>
 </html>
+
 
