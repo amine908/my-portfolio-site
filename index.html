@@ -1319,683 +1319,686 @@
     </footer>
 
     <script>
-        // Products data with improved names and descriptions
-        const products = [
-            {
-                id: 1,
-                name: "Hoodie Oversize 'Chill' - Édition Premium",
-                description: "Plongez dans un confort absolu avec notre hoodie oversize signature. Conçu avec un molleton intérieur brossé ultra-doux, cette pièce iconique offre une coupe large et décontractée parfaite pour toutes les occasions.",
-                features: ["Molleton intérieur brossé", "Coupe oversize tendance", "Coton premium 100%", "Capuche ajustable"],
-                price: 299,
-                image_url: "hoodie1 .jpg.jpg",
-                badge: "Bestseller"
-            },
-            {
-                id: 2,
-                name: "Hoodie Urban Grey - Style Moderne",
-                description: "Alliance parfaite entre élégance urbaine et confort quotidien. Ce hoodie gris moderne arbore un design épuré et une coupe ajustée qui sublime votre silhouette tout en conservant un confort optimal.",
-                features: ["Design épuré et moderne", "Coupe ajustée premium", "Tissu respirant", "Finition soignée"],
-                price: 349,
-                image_url: "hoodie2.jpg.jpg",
-                badge: "Nouveau"
-            },
-            {
-                id: 3,
-                name: "Hoodie Premium Blanc - Édition Limitée",
-                description: "L'excellence à l'état pur. Cette édition limitée en blanc immaculé incarne le summum du raffinement. Matériaux de première qualité et finitions artisanales pour une pièce unique et intemporelle.",
-                features: ["Édition limitée exclusive", "Blanc immaculé premium", "Finitions artisanales", "Qualité exceptionnelle"],
-                price: 399,
-                image_url: "hoodie3.jpg.jpg",
-                badge: "Exclusif"
-            },
-            {
-                id: 4,
-                name: "Hoodie Street Blue - Essence Urbaine",
-                description: "Capturez l'essence du streetwear avec ce hoodie bleu vibrant. Inspiré des tendances urbaines les plus actuelles, il combine style audacieux et confort inégalé pour un look qui fait la différence.",
-                features: ["Style streetwear tendance", "Bleu vibrant premium", "Confort optimal", "Design audacieux"],
-                price: 329,
-                image_url: "hoodie4.jpg.jpg",
-                badge: "Tendance"
-            },
-            {
-                id: 5,
-                name: "Hoodie Vintage Red - Rétro Chic",
-                description: "Un hommage au style rétro avec une touche contemporaine. Ce hoodie rouge vintage allie charme d'antan et confort moderne, créant une pièce intemporelle qui ne passe jamais de mode.",
-                features: ["Style rétro authentique", "Rouge vintage élégant", "Confort maximal", "Intemporel"],
-                price: 359,
-                image_url: "hoodie5.jpg.jpg",
-                badge: "Classique"
-            },
-            {
-                id: 6,
-                name: "Hoodie Sport Green - Performance Active",
-                description: "Conçu pour les esprits actifs, ce hoodie vert sportif allie performance et style. Matériaux techniques respirants et coupe optimisée pour accompagner vos activités tout en conservant un look irréprochable.",
-                features: ["Performance active", "Vert sportif dynamique", "Tissu technique", "Polyvalent"],
-                price: 319,
-                image_url: "hoodie6.jpg.jpg",
-                badge: "Sport"
+    // =======================================================
+    // I. CONFIGURATION GLOBALE ET FIREBASE
+    // =======================================================
+    
+    // Variable pour stocker les produits lus de Firebase (Nécessaire pour le Panier)
+    let products = [];
+    let cart = [];
+    const selectedSizes = {};
+    const db = firebase.firestore(); // Initialisation de Firestore (Assumant le SDK dans le <head>)
+
+    // =======================================================
+    // II. LOGIQUE DYNAMIQUE (REMPLACE displayProducts STATIQUE)
+    // =======================================================
+
+    // Nouveau nom pour la fonction de lecture Firebase (anciennement displayProducts)
+    function lireProduits() {
+        // NOTE: Assurez-vous que l'ID de votre DIV principale pour les produits est bien 'productsGrid'
+        const grid = document.getElementById('productsGrid'); 
+        if (!grid) {
+            console.error("L'élément 'productsGrid' est introuvable. Assurez-vous d'avoir la <div id='productsGrid'> dans votre HTML.");
+            return;
+        }
+        grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 20px;">Chargement du catalogue...</div>';
+
+        // Requête de lecture de la collection "hoodies"
+        db.collection("hoodies").get().then((querySnapshot) => {
+            
+            // 1. Vider l'ancien tableau statique et le remplir avec les données Firebase
+            products = []; 
+            querySnapshot.forEach((doc) => {
+                const productData = doc.data();
+                // Utilise le doc.id (string) comme identifiant unique
+                products.push({
+                    id: doc.id, 
+                    name: productData.nom || 'Hoodie sans nom',
+                    description: productData.description || 'Description manquante',
+                    price: productData.prix || 0,
+                    image_url: productData.img || '', // Champ dans Firestore pour le nom du fichier image
+                    badge: productData.badge || '',
+                    // On suppose que les tailles sont toujours S, M, L, XL, XXL
+                    features: ["Molleton intérieur brossé", "Coupe oversize tendance"] 
+                });
+            });
+            
+            grid.innerHTML = '';
+            
+            if (products.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 20px;">Désolé, le catalogue est actuellement vide.</div>';
+                return;
             }
-        ];
 
-        let cart = [];
-
-        // Display products
-        function displayProducts() {
-            const grid = document.getElementById('productsGrid');
-            grid.innerHTML = products.map(product => `
-                <div class="product-card">
-                    <div class="product-image">
-                        ${product.badge ? `<div class="product-badge">${product.badge}</div>` : ''}
-                        <img src="${product.image_url}" alt="${product.name}" onerror="this.src='https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800&h=800&fit=crop'">
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-title">${product.name}</h3>
-                        <p class="product-description">${product.description}</p>
-                        <ul class="product-features">
-                            ${product.features.map(feature => `<li>${feature}</li>`).join('')}
-                        </ul>
-                        <div class="product-price">${product.price} DH</div>
-                        <div class="size-selector">
-                            <label>Taille :</label>
-                            <div class="size-options">
-                                <div class="size-option" data-size="S" data-product="${product.id}" onclick="selectSize(${product.id}, 'S')">S</div>
-                                <div class="size-option" data-size="M" data-product="${product.id}" onclick="selectSize(${product.id}, 'M')">M</div>
-                                <div class="size-option" data-size="L" data-product="${product.id}" onclick="selectSize(${product.id}, 'L')">L</div>
-                                <div class="size-option" data-size="XL" data-product="${product.id}" onclick="selectSize(${product.id}, 'XL')">XL</div>
-                                <div class="size-option" data-size="XXL" data-product="${product.id}" onclick="selectSize(${product.id}, 'XXL')">XXL</div>
-                            </div>
+            // 2. Afficher les produits dynamiquement
+            grid.innerHTML = products.map(product => {
+                // CORRECTION CRITIQUE du chemin de l'image (l'erreur 404)
+                // Le chemin absolu est nécessaire pour GitHub Pages et suppose un dossier 'images'
+                // SI VOS IMAGES SONT À LA RACINE DE VOTRE DÉPÔT, retirez '/images'
+                const imagePath = `/my-portfolio-site/images/${product.image_url.trim()}`; 
+                
+                return `
+                    <div class="product-card fade-in">
+                        <div class="product-image">
+                            ${product.badge ? `<div class="product-badge">${product.badge}</div>` : ''}
+                            <img src="${imagePath}" alt="${product.name}" onerror="this.src='https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800&h=800&fit=crop'">
                         </div>
-                        <button class="add-to-cart" onclick="addToCart(${product.id})">
-                            Ajouter au Panier
+                        <div class="product-info">
+                            <h3 class="product-title">${product.name}</h3>
+                            <p class="product-description">${product.description}</p>
+                            <ul class="product-features">
+                                ${product.features.map(feature => `<li>${feature}</li>`).join('')}
+                            </ul>
+                            <div class="product-price">${product.price} DH</div>
+                            <div class="size-selector">
+                                <label>Taille :</label>
+                                <div class="size-options">
+                                    <div class="size-option" data-size="S" data-product="${product.id}" onclick="selectSize('${product.id}', 'S')">S</div>
+                                    <div class="size-option" data-size="M" data-product="${product.id}" onclick="selectSize('${product.id}', 'M')">M</div>
+                                    <div class="size-option" data-size="L" data-product="${product.id}" onclick="selectSize('${product.id}', 'L')">L</div>
+                                    <div class="size-option" data-size="XL" data-product="${product.id}" onclick="selectSize('${product.id}', 'XL')">XL</div>
+                                    <div class="size-option" data-size="XXL" data-product="${product.id}" onclick="selectSize('${product.id}', 'XXL')">XXL</div>
+                                </div>
+                            </div>
+                            <button class="add-to-cart" onclick="addToCart('${product.id}')">
+                                Ajouter au Panier
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Ré-exécute les animations après l'affichage des produits
+            observeElements();
+        })
+        .catch((error) => {
+            console.error("Erreur lors de la lecture des produits: ", error);
+            grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: red;">Erreur de connexion à la base de données. Vérifiez si les règles Firestore sont en mode test.</div>`;
+        });
+    }
+
+    // =======================================================
+    // III. LOGIQUE DU PANIER (Modifiée pour utiliser des ID de type string)
+    // =======================================================
+
+    // Select size function (Modifiée pour utiliser des strings pour l'ID)
+    function selectSize(productId, size) {
+        const sizeOptions = document.querySelectorAll(`[data-product="${productId}"]`);
+        sizeOptions.forEach(option => {
+            option.classList.remove('selected');
+        });
+        
+        const selectedOption = document.querySelector(`[data-product="${productId}"][data-size="${size}"]`);
+        if (selectedOption) {
+            selectedOption.classList.add('selected');
+            selectedSizes[productId] = size;
+        }
+    }
+
+    // Add to cart (Modifiée pour utiliser des strings pour l'ID)
+    function addToCart(productId) {
+        if (!selectedSizes[productId]) {
+            alert('Veuillez sélectionner une taille avant d\'ajouter au panier');
+            return;
+        }
+
+        // Utilise la liste globale 'products' remplie par Firebase
+        const product = products.find(p => p.id === productId); 
+        const size = selectedSizes[productId];
+        
+        const existingItem = cart.find(item => item.id === productId && item.size === size);
+        
+        if (existingItem) {
+            existingItem.quantity++;
+        } else {
+            cart.push({ ...product, quantity: 1, size: size });
+        }
+        
+        updateCart();
+        
+        const cartCount = document.getElementById('cartCount');
+        const currentCount = parseInt(cartCount.textContent) || 0;
+        animateCounter(cartCount, currentCount);
+        
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = '✓ Ajouté !';
+        button.style.background = 'linear-gradient(135deg, #4caf50 0%, #45a049 100%)';
+        setTimeout(() => {
+            button.textContent = originalText;
+            button.style.background = '';
+        }, 1500);
+    }
+
+    // Update cart
+    function updateCart() {
+        const cartCount = document.getElementById('cartCount');
+        const cartItems = document.getElementById('cartItems');
+        const cartTotal = document.getElementById('cartTotal');
+        
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+        cartCount.textContent = totalItems;
+        
+        if (cart.length === 0) {
+            cartItems.innerHTML = '<div class="empty-cart">Votre panier est vide</div>';
+            cartTotal.textContent = '';
+        } else {
+            cartItems.innerHTML = cart.map((item, index) => `
+                <div class="cart-item">
+                    <div>
+                        <strong>${item.name}</strong><br>
+                        <span style="color: #666; font-size: 0.9rem;">Taille: ${item.size || 'N/A'} | ${item.price} DH × ${item.quantity}</span>
+                    </div>
+                    <div>
+                        <button onclick="removeFromCart(${index})" style="background: #ff6b6b; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                            Retirer
                         </button>
                     </div>
                 </div>
             `).join('');
-        }
-
-        // Store selected sizes
-        const selectedSizes = {};
-
-        // Select size function
-        function selectSize(productId, size) {
-            // Remove selected class from all size options for this product
-            const sizeOptions = document.querySelectorAll(`[data-product="${productId}"]`);
-            sizeOptions.forEach(option => {
-                option.classList.remove('selected');
-            });
-            
-            // Add selected class to clicked size
-            const selectedOption = document.querySelector(`[data-product="${productId}"][data-size="${size}"]`);
-            if (selectedOption) {
-                selectedOption.classList.add('selected');
-                selectedSizes[productId] = size;
-            }
-        }
-
-        // Add to cart
-        function addToCart(productId) {
-            // Check if size is selected
-            if (!selectedSizes[productId]) {
-                alert('Veuillez sélectionner une taille avant d\'ajouter au panier');
-                return;
-            }
-
-            const product = products.find(p => p.id === productId);
-            const size = selectedSizes[productId];
-            
-            // Check if item with same product and size already exists
-            const existingItem = cart.find(item => item.id === productId && item.size === size);
-            
-            if (existingItem) {
-                existingItem.quantity++;
-            } else {
-                cart.push({ ...product, quantity: 1, size: size });
-            }
-            
-            updateCart();
-            
-            // Animate cart counter
-            const cartCount = document.getElementById('cartCount');
-            const currentCount = parseInt(cartCount.textContent) || 0;
-            animateCounter(cartCount, currentCount);
-            
-            // Show feedback
-            const button = event.target;
-            const originalText = button.textContent;
-            button.textContent = '✓ Ajouté !';
-            button.style.background = 'linear-gradient(135deg, #4caf50 0%, #45a049 100%)';
-            setTimeout(() => {
-                button.textContent = originalText;
-                button.style.background = '';
-            }, 1500);
-        }
-
-        // Update cart
-        function updateCart() {
-            const cartCount = document.getElementById('cartCount');
-            const cartItems = document.getElementById('cartItems');
-            const cartTotal = document.getElementById('cartTotal');
-            
-            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-            cartCount.textContent = totalItems;
-            
-            if (cart.length === 0) {
-                cartItems.innerHTML = '<div class="empty-cart">Votre panier est vide</div>';
-                cartTotal.textContent = '';
-            } else {
-                cartItems.innerHTML = cart.map((item, index) => `
-                    <div class="cart-item">
-                        <div>
-                            <strong>${item.name}</strong><br>
-                            <span style="color: #666; font-size: 0.9rem;">Taille: ${item.size || 'N/A'} | ${item.price} DH × ${item.quantity}</span>
-                        </div>
-                        <div>
-                            <button onclick="removeFromCart(${index})" style="background: #ff6b6b; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                                Retirer
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
-                
-                const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-                cartTotal.innerHTML = `Total: <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 2rem;">${total} DH</span>`;
-            }
-        }
-
-        // Remove from cart
-        function removeFromCart(index) {
-            cart.splice(index, 1);
-            updateCart();
-        }
-
-        // Toggle cart modal
-        function toggleCart() {
-            const modal = document.getElementById('cartModal');
-            modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
-        }
-
-        // Checkout
-        function checkout() {
-            if (cart.length === 0) {
-                alert('Votre panier est vide !');
-                return;
-            }
             
             const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const itemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-            
-            alert(`🎉 Commande confirmée !\n\nArticles: ${itemsCount}\nTotal: ${total} DH\n\nMerci pour votre confiance !\nVotre commande sera traitée dans les plus brefs délais.`);
-            cart = [];
-            updateCart();
+            cartTotal.innerHTML = `Total: <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 2rem;">${total} DH</span>`;
+        }
+    }
+
+    // Remove from cart
+    function removeFromCart(index) {
+        cart.splice(index, 1);
+        updateCart();
+    }
+
+    // Toggle cart modal
+    function toggleCart() {
+        const modal = document.getElementById('cartModal');
+        modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+    }
+
+    // Checkout
+    function checkout() {
+        if (cart.length === 0) {
+            alert('Votre panier est vide !');
+            return;
+        }
+        
+        const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const itemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+        
+        alert(`🎉 Commande confirmée !\n\nArticles: ${itemsCount}\nTotal: ${total} DH\n\nMerci pour votre confiance !\nVotre commande sera traitée dans les plus brefs délais.`);
+        cart = [];
+        updateCart();
+        toggleCart();
+    }
+
+    // Close cart when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('cartModal');
+        if (event.target === modal) {
             toggleCart();
         }
+    }
 
-        // Close cart when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('cartModal');
-            if (event.target === modal) {
-                toggleCart();
-            }
-        }
-
-        // Smooth scroll for navigation links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-
-        // Create floating particles
-        function createParticles() {
-            const particlesContainer = document.getElementById('particles');
-            const particleCount = 20;
-            
-            for (let i = 0; i < particleCount; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.left = Math.random() * 100 + '%';
-                particle.style.animationDelay = Math.random() * 15 + 's';
-                particle.style.animationDuration = (10 + Math.random() * 10) + 's';
-                particlesContainer.appendChild(particle);
-            }
-        }
-
-        // Intersection Observer for scroll animations
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                }
-            });
-        }, observerOptions);
-
-        // Observe elements for animation
-        function observeElements() {
-            setTimeout(() => {
-                const elementsToObserve = document.querySelectorAll('.product-card, .feature-card, .testimonial-card, .about-container, .section-title');
-                elementsToObserve.forEach(el => {
-                    el.classList.add('fade-in');
-                    observer.observe(el);
+    // =======================================================
+    // IV. LOGIQUE DES ANIMATIONS ET DE L'INTERFACE (INTACTE)
+    // =======================================================
+    
+    // Smooth scroll for navigation links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
                 });
-            }, 500);
+            }
+        });
+    });
+
+    // Create floating particles
+    function createParticles() {
+        const particlesContainer = document.getElementById('particles');
+        const particleCount = 20;
+        
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 15 + 's';
+            particle.style.animationDuration = (10 + Math.random() * 10) + 's';
+            particlesContainer.appendChild(particle);
         }
+    }
 
-        // Remove loading overlay
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                const loadingOverlay = document.getElementById('loadingOverlay');
-                if (loadingOverlay) {
-                    loadingOverlay.style.display = 'none';
-                }
-            }, 1500);
-        });
+    // Intersection Observer for scroll animations
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
 
-        // Add parallax effect to hero
-        window.addEventListener('scroll', () => {
-            const scrolled = window.pageYOffset;
-            const hero = document.querySelector('.hero');
-            if (hero) {
-                hero.style.transform = `translateY(${scrolled * 0.5}px)`;
-                hero.style.opacity = 1 - (scrolled / 500);
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
             }
         });
+    }, observerOptions);
 
-        // Add ripple effect to buttons
-        document.querySelectorAll('.add-to-cart, .cta-button, .checkout-button').forEach(button => {
-            button.addEventListener('click', function(e) {
-                const ripple = document.createElement('span');
-                const rect = this.getBoundingClientRect();
-                const size = Math.max(rect.width, rect.height);
-                const x = e.clientX - rect.left - size / 2;
-                const y = e.clientY - rect.top - size / 2;
-                
-                ripple.style.width = ripple.style.height = size + 'px';
-                ripple.style.left = x + 'px';
-                ripple.style.top = y + 'px';
-                ripple.classList.add('ripple');
-                
-                this.appendChild(ripple);
-                
-                setTimeout(() => {
-                    ripple.remove();
-                }, 600);
-            });
-        });
-
-        // Add CSS for ripple effect
-        const style = document.createElement('style');
-        style.textContent = `
-            .add-to-cart, .cta-button, .checkout-button {
-                position: relative;
-                overflow: hidden;
-            }
-            .ripple {
-                position: absolute;
-                border-radius: 50%;
-                background: rgba(255, 255, 255, 0.6);
-                transform: scale(0);
-                animation: ripple-animation 0.6s ease-out;
-                pointer-events: none;
-            }
-            @keyframes ripple-animation {
-                to {
-                    transform: scale(4);
-                    opacity: 0;
-                }
-            }
-        `;
-        document.head.appendChild(style);
-
-        // Counter animation for cart
-        function animateCounter(element, target) {
-            let current = 0;
-            const increment = target / 20;
-            const timer = setInterval(() => {
-                current += increment;
-                if (current >= target) {
-                    element.textContent = target;
-                    clearInterval(timer);
-                } else {
-                    element.textContent = Math.floor(current);
-                }
-            }, 20);
-        }
-
-
-        // Initialize everything
-        createParticles();
-        displayProducts();
-        observeElements();
-
-        // Add stagger animation to products on load
+    // Observe elements for animation
+    function observeElements() {
         setTimeout(() => {
-            const products = document.querySelectorAll('.product-card');
-            products.forEach((card, index) => {
-                card.style.animationDelay = (index * 0.1) + 's';
-                card.style.animation = 'productCardEnter 0.6s ease forwards';
+            const elementsToObserve = document.querySelectorAll('.product-card, .feature-card, .testimonial-card, .about-container, .section-title');
+            elementsToObserve.forEach(el => {
+                el.classList.add('fade-in');
+                observer.observe(el);
             });
-        }, 200);
+        }, 500);
+    }
 
+    // Remove loading overlay
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'none';
+            }
+        }, 1500);
+    });
 
-        // Add animation to cart icon on click
-        const cartIcon = document.querySelector('.cart-icon');
-        if (cartIcon) {
-            cartIcon.addEventListener('click', function() {
-                this.style.animation = 'none';
-                setTimeout(() => {
-                    this.style.animation = 'pulse 0.5s ease';
-                }, 10);
-            });
+    // Add parallax effect to hero
+    window.addEventListener('scroll', () => {
+        const scrolled = window.pageYOffset;
+        const hero = document.querySelector('.hero');
+        if (hero) {
+            hero.style.transform = `translateY(${scrolled * 0.5}px)`;
+            hero.style.opacity = 1 - (scrolled / 500);
         }
+    });
 
-        // ========== MOUSE ANIMATIONS ==========
-        
-        // Custom Cursor with smooth follow
-        const cursor = document.getElementById('customCursor');
-        const cursorDot = document.getElementById('cursorDot');
-        let mouseX = 0, mouseY = 0;
-        let cursorX = 0, cursorY = 0;
-        let dotX = 0, dotY = 0;
-
-        document.addEventListener('mousemove', (e) => {
-            mouseX = e.clientX;
-            mouseY = e.clientY;
-        });
-
-        // Smooth cursor animation - FAST
-        function animateCursor() {
-            cursorX += (mouseX - cursorX) * 0.5;
-            cursorY += (mouseY - cursorY) * 0.5;
-            if (cursor) {
-                cursor.style.left = cursorX + 'px';
-                cursor.style.top = cursorY + 'px';
-            }
-
-            dotX += (mouseX - dotX) * 0.8;
-            dotY += (mouseY - dotY) * 0.8;
-            if (cursorDot) {
-                cursorDot.style.left = dotX + 'px';
-                cursorDot.style.top = dotY + 'px';
-            }
-
-            requestAnimationFrame(animateCursor);
-        }
-        animateCursor();
-
-        // Cursor hover effects
-        const hoverElements = document.querySelectorAll('a, button, .product-card, .size-option, .cart-icon, .nav-links a');
-        hoverElements.forEach(el => {
-            el.addEventListener('mouseenter', () => {
-                if (cursor) cursor.classList.add('hover');
-            });
-            el.addEventListener('mouseleave', () => {
-                if (cursor) cursor.classList.remove('hover');
-            });
-        });
-
-        // Mouse Trail Effect
-        let trailArray = [];
-        document.addEventListener('mousemove', (e) => {
-            const trail = document.createElement('div');
-            trail.className = 'mouse-trail';
-            trail.style.left = e.clientX - 5 + 'px';
-            trail.style.top = e.clientY - 5 + 'px';
-            document.body.appendChild(trail);
-            trailArray.push(trail);
-
-            if (trailArray.length > 10) {
-                const oldTrail = trailArray.shift();
-                if (oldTrail && oldTrail.parentNode) {
-                    oldTrail.remove();
-                }
-            }
-
+    // Add ripple effect to buttons
+    document.querySelectorAll('.add-to-cart, .cta-button, .checkout-button').forEach(button => {
+        button.addEventListener('click', function(e) {
+            const ripple = document.createElement('span');
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.classList.add('ripple');
+            
+            this.appendChild(ripple);
+            
             setTimeout(() => {
-                if (trail && trail.parentNode) {
-                    trail.remove();
-                }
-            }, 500);
-        });
-
-        // Mouse Glow Effect - FAST
-        const glow = document.getElementById('mouseGlow');
-        let glowX = 0, glowY = 0;
-        document.addEventListener('mousemove', (e) => {
-            glowX = e.clientX;
-            glowY = e.clientY;
-        });
-        
-        function animateGlow() {
-            if (glow) {
-                const currentX = parseFloat(glow.style.left) || glowX;
-                const currentY = parseFloat(glow.style.top) || glowY;
-                const newX = currentX + (glowX - currentX) * 0.6;
-                const newY = currentY + (glowY - currentY) * 0.6;
-                glow.style.left = newX + 'px';
-                glow.style.top = newY + 'px';
-                glow.style.opacity = '1';
-            }
-            requestAnimationFrame(animateGlow);
-        }
-        animateGlow();
-
-        document.addEventListener('mouseleave', () => {
-            if (glow) {
-                glow.style.opacity = '0';
-            }
-        });
-
-        // Magnetic Effect for buttons - FAST
-        const magneticElements = document.querySelectorAll('.add-to-cart, .cta-button, .checkout-button, .cart-icon');
-        magneticElements.forEach(el => {
-            el.addEventListener('mousemove', function(e) {
-                const rect = this.getBoundingClientRect();
-                const x = e.clientX - rect.left - rect.width / 2;
-                const y = e.clientY - rect.top - rect.height / 2;
-                
-                const moveX = x * 0.25;
-                const moveY = y * 0.25;
-                
-                this.style.transition = 'transform 0.1s ease';
-                this.style.transform = `translate(${moveX}px, ${moveY}px)`;
-            });
-
-            el.addEventListener('mouseleave', function() {
-                this.style.transition = 'transform 0.2s ease';
-                this.style.transform = 'translate(0, 0)';
-            });
-        });
-
-        // 3D Tilt Effect for product cards - FAST
-        const productCards = document.querySelectorAll('.product-card');
-        productCards.forEach(card => {
-            card.addEventListener('mousemove', function(e) {
-                const rect = this.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                const centerX = rect.width / 2;
-                const centerY = rect.height / 2;
-                
-                const rotateX = (y - centerY) / 10;
-                const rotateY = (centerX - x) / 10;
-                
-                this.style.transition = 'transform 0.1s ease';
-                this.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-15px) scale(1.02)`;
-            });
-
-            card.addEventListener('mouseleave', function() {
-                this.style.transition = 'transform 0.3s ease';
-                this.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateY(0) scale(1)';
-            });
-        });
-
-        // Ripple effect on click anywhere
-        document.addEventListener('click', function(e) {
-            const ripple = document.createElement('div');
-            ripple.style.position = 'fixed';
-            ripple.style.width = '20px';
-            ripple.style.height = '20px';
-            ripple.style.borderRadius = '50%';
-            ripple.style.background = 'rgba(102, 126, 234, 0.6)';
-            ripple.style.left = e.clientX - 10 + 'px';
-            ripple.style.top = e.clientY - 10 + 'px';
-            ripple.style.pointerEvents = 'none';
-            ripple.style.zIndex = '9999';
-            ripple.style.animation = 'rippleExpand 0.6s ease-out forwards';
-            document.body.appendChild(ripple);
-
-            setTimeout(() => {
-                if (ripple && ripple.parentNode) {
-                    ripple.remove();
-                }
+                ripple.remove();
             }, 600);
         });
+    });
 
-        // Add ripple expand animation CSS
-        const rippleExpandStyle = document.createElement('style');
-        rippleExpandStyle.textContent = `
-            @keyframes rippleExpand {
-                0% {
-                    transform: scale(0);
-                    opacity: 1;
-                }
-                100% {
-                    transform: scale(15);
-                    opacity: 0;
-                }
+    // Add CSS for ripple effect
+    const style = document.createElement('style');
+    style.textContent = `
+        .add-to-cart, .cta-button, .checkout-button {
+            position: relative;
+            overflow: hidden;
+        }
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0);
+            animation: ripple-animation 0.6s ease-out;
+            pointer-events: none;
+        }
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
             }
-        `;
-        document.head.appendChild(rippleExpandStyle);
+        }
+    `;
+    document.head.appendChild(style);
 
-        // Particles that follow mouse
-        let particleCount = 0;
-        document.addEventListener('mousemove', (e) => {
-            if (particleCount < 3 && Math.random() > 0.7) {
-                particleCount++;
-                const particle = document.createElement('div');
-                particle.style.position = 'fixed';
-                particle.style.width = '6px';
-                particle.style.height = '6px';
-                const hue = Math.random() * 60 + 240;
-                particle.style.background = `hsl(${hue}, 70%, 60%)`;
-                particle.style.borderRadius = '50%';
-                particle.style.left = e.clientX + 'px';
-                particle.style.top = e.clientY + 'px';
-                particle.style.pointerEvents = 'none';
-                particle.style.zIndex = '9997';
-                particle.style.boxShadow = '0 0 10px rgba(102, 126, 234, 0.5)';
-                
-                const randomX = (Math.random() - 0.5) * 100;
-                const randomY = (Math.random() - 0.5) * 100;
-                
-                particle.style.animation = `particleFloat 1s ease-out forwards`;
-                particle.style.setProperty('--random-x', randomX + 'px');
-                particle.style.setProperty('--random-y', randomY + 'px');
-                
-                document.body.appendChild(particle);
-
-                setTimeout(() => {
-                    if (particle && particle.parentNode) {
-                        particle.remove();
-                    }
-                    particleCount--;
-                }, 1000);
+    // Counter animation for cart
+    function animateCounter(element, target) {
+        let current = 0;
+        const increment = target / 20;
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                element.textContent = target;
+                clearInterval(timer);
+            } else {
+                element.textContent = Math.floor(current);
             }
+        }, 20);
+    }
+
+    // Initialize everything
+    createParticles();
+    lireProduits(); // <-- Appel de la fonction dynamique Firebase
+    // observeElements() est appelée à la fin de lireProduits()
+    
+    // Add stagger animation to products on load
+    setTimeout(() => {
+        const products = document.querySelectorAll('.product-card');
+        products.forEach((card, index) => {
+            card.style.animationDelay = (index * 0.1) + 's';
+            card.style.animation = 'productCardEnter 0.6s ease forwards';
+        });
+    }, 200);
+
+    // Add animation to cart icon on click
+    const cartIcon = document.querySelector('.cart-icon');
+    if (cartIcon) {
+        cartIcon.addEventListener('click', function() {
+            this.style.animation = 'none';
+            setTimeout(() => {
+                this.style.animation = 'pulse 0.5s ease';
+            }, 10);
+        });
+    }
+
+    // ========== MOUSE ANIMATIONS ==========
+    
+    // Custom Cursor with smooth follow
+    const cursor = document.getElementById('customCursor');
+    const cursorDot = document.getElementById('cursorDot');
+    let mouseX = 0, mouseY = 0;
+    let cursorX = 0, cursorY = 0;
+    let dotX = 0, dotY = 0;
+
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    });
+
+    // Smooth cursor animation - FAST
+    function animateCursor() {
+        cursorX += (mouseX - cursorX) * 0.5;
+        cursorY += (mouseY - cursorY) * 0.5;
+        if (cursor) {
+            cursor.style.left = cursorX + 'px';
+            cursor.style.top = cursorY + 'px';
+        }
+
+        dotX += (mouseX - dotX) * 0.8;
+        dotY += (mouseY - dotY) * 0.8;
+        if (cursorDot) {
+            cursorDot.style.left = dotX + 'px';
+            cursorDot.style.top = dotY + 'px';
+        }
+
+        requestAnimationFrame(animateCursor);
+    }
+    animateCursor();
+
+    // Cursor hover effects
+    const hoverElements = document.querySelectorAll('a, button, .product-card, .size-option, .cart-icon, .nav-links a');
+    hoverElements.forEach(el => {
+        el.addEventListener('mouseenter', () => {
+            if (cursor) cursor.classList.add('hover');
+        });
+        el.addEventListener('mouseleave', () => {
+            if (cursor) cursor.classList.remove('hover');
+        });
+    });
+
+    // Mouse Trail Effect
+    let trailArray = [];
+    document.addEventListener('mousemove', (e) => {
+        const trail = document.createElement('div');
+        trail.className = 'mouse-trail';
+        trail.style.left = e.clientX - 5 + 'px';
+        trail.style.top = e.clientY - 5 + 'px';
+        document.body.appendChild(trail);
+        trailArray.push(trail);
+
+        if (trailArray.length > 10) {
+            const oldTrail = trailArray.shift();
+            if (oldTrail && oldTrail.parentNode) {
+                oldTrail.remove();
+            }
+        }
+
+        setTimeout(() => {
+            if (trail && trail.parentNode) {
+                trail.remove();
+            }
+        }, 500);
+    });
+
+    // Mouse Glow Effect - FAST
+    const glow = document.getElementById('mouseGlow');
+    let glowX = 0, glowY = 0;
+    document.addEventListener('mousemove', (e) => {
+        glowX = e.clientX;
+        glowY = e.clientY;
+    });
+    
+    function animateGlow() {
+        if (glow) {
+            const currentX = parseFloat(glow.style.left) || glowX;
+            const currentY = parseFloat(glow.style.top) || glowY;
+            const newX = currentX + (glowX - currentX) * 0.6;
+            const newY = currentY + (glowY - currentY) * 0.6;
+            glow.style.left = newX + 'px';
+            glow.style.top = newY + 'px';
+            glow.style.opacity = '1';
+        }
+        requestAnimationFrame(animateGlow);
+    }
+    animateGlow();
+
+    document.addEventListener('mouseleave', () => {
+        if (glow) {
+            glow.style.opacity = '0';
+        }
+    });
+
+    // Magnetic Effect for buttons - FAST
+    const magneticElements = document.querySelectorAll('.add-to-cart, .cta-button, .checkout-button, .cart-icon');
+    magneticElements.forEach(el => {
+        el.addEventListener('mousemove', function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+            
+            const moveX = x * 0.25;
+            const moveY = y * 0.25;
+            
+            this.style.transition = 'transform 0.1s ease';
+            this.style.transform = `translate(${moveX}px, ${moveY}px)`;
         });
 
-        // Particle float animation
-        const particleFloatStyle = document.createElement('style');
-        particleFloatStyle.textContent = `
-            @keyframes particleFloat {
-                0% {
-                    transform: translate(0, 0) scale(1);
-                    opacity: 1;
-                }
-                100% {
-                    transform: translate(var(--random-x, 0), var(--random-y, 0)) scale(0);
-                    opacity: 0;
-                }
-            }
-        `;
-        document.head.appendChild(particleFloatStyle);
+        el.addEventListener('mouseleave', function() {
+            this.style.transition = 'transform 0.2s ease';
+            this.style.transform = 'translate(0, 0)';
+        });
+    });
 
-        // Parallax effect based on mouse position
-        document.addEventListener('mousemove', (e) => {
-            const mouseXPercent = (e.clientX / window.innerWidth) * 100;
-            const mouseYPercent = (e.clientY / window.innerHeight) * 100;
-
-            // Move background based on mouse
-            const bodyElement = document.body;
-            const offsetX = (mouseXPercent - 50) * 0.02;
-            const offsetY = (mouseYPercent - 50) * 0.02;
-            bodyElement.style.setProperty('--mouse-x', offsetX + 'px');
-            bodyElement.style.setProperty('--mouse-y', offsetY + 'px');
+    // 3D Tilt Effect for product cards - FAST
+    const productCards = document.querySelectorAll('.product-card');
+    productCards.forEach(card => {
+        card.addEventListener('mousemove', function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const rotateX = (y - centerY) / 10;
+            const rotateY = (centerX - x) / 10;
+            
+            this.style.transition = 'transform 0.1s ease';
+            this.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-15px) scale(1.02)`;
         });
 
-        // Glow effect on hover for interactive elements
-        const interactiveElements = document.querySelectorAll('a, button, .product-card, .size-option, .logo');
-        interactiveElements.forEach(el => {
-            el.addEventListener('mouseenter', function() {
-                this.style.transition = 'filter 0.3s ease';
-                this.style.filter = 'drop-shadow(0 0 15px rgba(102, 126, 234, 0.6))';
+        card.addEventListener('mouseleave', function() {
+            this.style.transition = 'transform 0.3s ease';
+            this.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateY(0) scale(1)';
+        });
+    });
+
+    // Ripple effect on click anywhere
+    document.addEventListener('click', function(e) {
+        const ripple = document.createElement('div');
+        ripple.style.position = 'fixed';
+        ripple.style.width = '20px';
+        ripple.style.height = '20px';
+        ripple.style.borderRadius = '50%';
+        ripple.style.background = 'rgba(102, 126, 234, 0.6)';
+        ripple.style.left = e.clientX - 10 + 'px';
+        ripple.style.top = e.clientY - 10 + 'px';
+        ripple.style.pointerEvents = 'none';
+        ripple.style.zIndex = '9999';
+        ripple.style.animation = 'rippleExpand 0.6s ease-out forwards';
+        document.body.appendChild(ripple);
+
+        setTimeout(() => {
+            if (ripple && ripple.parentNode) {
+                ripple.remove();
+            }
+        }, 600);
+    });
+
+    // Add ripple expand animation CSS
+    const rippleExpandStyle = document.createElement('style');
+    rippleExpandStyle.textContent = `
+        @keyframes rippleExpand {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(15);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(rippleExpandStyle);
+
+    // Particles that follow mouse
+    let particleCount = 0;
+    document.addEventListener('mousemove', (e) => {
+        if (particleCount < 3 && Math.random() > 0.7) {
+            particleCount++;
+            const particle = document.createElement('div');
+            particle.style.position = 'fixed';
+            particle.style.width = '6px';
+            particle.style.height = '6px';
+            const hue = Math.random() * 60 + 240;
+            particle.style.background = `hsl(${hue}, 70%, 60%)`;
+            particle.style.borderRadius = '50%';
+            particle.style.left = e.clientX + 'px';
+            particle.style.top = e.clientY + 'px';
+            particle.style.pointerEvents = 'none';
+            particle.style.zIndex = '9997';
+            particle.style.boxShadow = '0 0 10px rgba(102, 126, 234, 0.5)';
+            
+            const randomX = (Math.random() - 0.5) * 100;
+            const randomY = (Math.random() - 0.5) * 100;
+            
+            particle.style.animation = `particleFloat 1s ease-out forwards`;
+            particle.style.setProperty('--random-x', randomX + 'px');
+            particle.style.setProperty('--random-y', randomY + 'px');
+            
+            document.body.appendChild(particle);
+
+            setTimeout(() => {
+                if (particle && particle.parentNode) {
+                    particle.remove();
+                }
+                particleCount--;
+            }, 1000);
+        }
+    });
+
+    // Particle float animation
+    const particleFloatStyle = document.createElement('style');
+    particleFloatStyle.textContent = `
+        @keyframes particleFloat {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--random-x, 0), var(--random-y, 0)) scale(0);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(particleFloatStyle);
+
+    // Parallax effect based on mouse position
+    document.addEventListener('mousemove', (e) => {
+        const mouseXPercent = (e.clientX / window.innerWidth) * 100;
+        const mouseYPercent = (e.clientY / window.innerHeight) * 100;
+
+        // Move background based on mouse
+        const bodyElement = document.body;
+        const offsetX = (mouseXPercent - 50) * 0.02;
+        const offsetY = (mouseYPercent - 50) * 0.02;
+        bodyElement.style.setProperty('--mouse-x', offsetX + 'px');
+        bodyElement.style.setProperty('--mouse-y', offsetY + 'px');
+    });
+
+    // Glow effect on hover for interactive elements
+    const interactiveElements = document.querySelectorAll('a, button, .product-card, .size-option, .logo');
+    interactiveElements.forEach(el => {
+        el.addEventListener('mouseenter', function() {
+            this.style.transition = 'filter 0.3s ease';
+            this.style.filter = 'drop-shadow(0 0 15px rgba(102, 126, 234, 0.6))';
+        });
+        el.addEventListener('mouseleave', function() {
+            this.style.filter = 'none';
+        });
+    });
+
+    // Smooth scroll with mouse wheel enhancement
+    let isScrolling = false;
+    window.addEventListener('wheel', (e) => {
+        if (!isScrolling && Math.abs(e.deltaY) > 50) {
+            isScrolling = true;
+            const delta = e.deltaY;
+            window.scrollBy({
+                top: delta * 0.3,
+                behavior: 'smooth'
             });
-            el.addEventListener('mouseleave', function() {
-                this.style.filter = 'none';
-            });
-        });
+            setTimeout(() => {
+                isScrolling = false;
+            }, 200);
+        }
+    }, { passive: true });
 
-        // Smooth scroll with mouse wheel enhancement
-        let isScrolling = false;
-        window.addEventListener('wheel', (e) => {
-            if (!isScrolling && Math.abs(e.deltaY) > 50) {
-                isScrolling = true;
-                const delta = e.deltaY;
-                window.scrollBy({
-                    top: delta * 0.3,
-                    behavior: 'smooth'
-                });
-                setTimeout(() => {
-                    isScrolling = false;
-                }, 200);
-            }
-        }, { passive: true });
+    // Mouse position tracking for advanced effects
+    let mousePos = { x: 0, y: 0 };
+    document.addEventListener('mousemove', (e) => {
+        mousePos.x = e.clientX;
+        mousePos.y = e.clientY;
+    });
 
-        // Mouse position tracking for advanced effects
-        let mousePos = { x: 0, y: 0 };
-        document.addEventListener('mousemove', (e) => {
-            mousePos.x = e.clientX;
-            mousePos.y = e.clientY;
-        });
-
-        // Dynamic background based on mouse position
-        setInterval(() => {
-            const bodyBefore = document.querySelector('body::before');
-            if (mousePos.x && mousePos.y) {
-                const xPercent = (mousePos.x / window.innerWidth) * 100;
-                const yPercent = (mousePos.y / window.innerHeight) * 100;
-                document.body.style.background = `
-                    linear-gradient(135deg, 
-                        #f5f7fa 0%, 
-                        rgba(${120 + xPercent * 0.5}, ${119 + yPercent * 0.5}, 198, 0.1) 50%, 
-                        #f0f4f8 100%
-                    )
-                `;
-            }
-        }, 100);
-    </script>
+    // Dynamic background based on mouse position
+    setInterval(() => {
+        const bodyBefore = document.querySelector('body::before');
+        if (mousePos.x && mousePos.y) {
+            const xPercent = (mousePos.x / window.innerWidth) * 100;
+            const yPercent = (mousePos.y / window.innerHeight) * 100;
+            document.body.style.background = `
+                linear-gradient(135deg, 
+                    #f5f7fa 0%, 
+                    rgba(${120 + xPercent * 0.5}, ${119 + yPercent * 0.5}, 198, 0.1) 50%, 
+                    #f0f4f8 100%
+                )
+            `;
+        }
+    }, 100);
+</script>
 </body>
 </html>
+
 
